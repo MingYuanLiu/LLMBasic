@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <string>
+#include <future>
 
 namespace LLMBasic
 {
@@ -22,12 +23,12 @@ namespace LLMBasic
     public:
         static constexpr std::string API_MESSAGE = "/v1/message";
         
-
         using ResponseCallback = std::function<bool(std::string& /* response string data */)>;
         
         explicit ClaudeClient(const ClientInitOptions& ApiKey);
 
         void SendMessage(const std::string& Message, ResponseCallback&& ResponseAsyncCallback);
+
     };
 }
 
