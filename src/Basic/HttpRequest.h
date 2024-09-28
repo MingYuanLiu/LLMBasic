@@ -2,7 +2,9 @@
 #include <functional>
 #include <memory>
 #include <string>
+
 #include "json11.hpp"
+#include "curl/curl.h"
 
 namespace LLMBasic
 {
@@ -10,7 +12,8 @@ namespace LLMBasic
     {
         HttpOk,
         Http404,
-        Http400
+        Http400,
+        CurlInitError,
     };
     
     class HttpRequest
@@ -18,21 +21,59 @@ namespace LLMBasic
     public:
         using ResponseCallback = std::function<void(HttpResponseCode, const json11::Json&)>;
         
-        static std::shared_ptr<HttpRequest> Create();
+        static std::shared_ptr<HttpRequest> Create(const std::string& Url);
 
-        void SetHeader(const std::string& HttpHeader);
+        HttpRequest& AddHeader(const std::string& HttpHeader)
+        {
+            Headers.push_back(HttpHeader);
+            return *this;
+        }
         
-        HttpResponseCode SendMessage(const json11::Json& RequestData, ResponseCallback&& Callback);
+        void SendRequest(const json11::Json& RequestData, ResponseCallback&& Callback);
 
-        json11::Json GetResponse();
+        json11::Json GetResponse() { return ResponseData; }
 
-        // 
-        json11::Json AwaitSendMessage(const json11::Json& RequestData);
+        std::string GetErrorMessage() { return ErrorMsg; }
+
+        json11::Json AwaitSendRequest(const json11::Json& RequestData);
 
         void AddResponseCallback(ResponseCallback&& Callback);
+
+        void SetResponseWithHeaderData(bool WithHeader) { IsResponseWithHeaderData = WithHeader;  }
         
     private:
+        explicit HttpRequest(const std::string& Url)
+            : Headers(std::vector<std::string>()),
+            ResponseData(json11::Json()),
+            RequestUrl(Url),
+            IsResponseWithHeaderData(false),
+            Callbacks(std::vector<ResponseCallback>())
+        {}
+
+        struct CurlSendData
+        {
+            const char* DataPtr;
+            size_t DataSizeSendLeft;
+        };
+        
+        HttpResponseCode CurlPostRequest(const json11::Json& RequestData);
+
+        size_t CurlRequestWriteCallback(void* RecvData, size_t DataSize, size_t nMem, void* UserData);
+
+        // read callback of sending data
+        size_t CurlRequestSendDataReadCallback(void* SendData, size_t DataSize, size_t nMem, void* UserData);
+
+        HttpResponseCode ConvertCurlCodeToHttpErrorCode(const CURLcode& CurlCode);
+        
+        std::vector<std::string> Headers;
+        
         json11::Json ResponseData;
+
+        std::string RequestUrl;
+
+        std::string ErrorMsg;
+
+        bool IsResponseWithHeaderData;
 
         std::vector<ResponseCallback> Callbacks;
     };
