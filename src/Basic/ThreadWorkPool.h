@@ -92,13 +92,14 @@ namespace LLMBasic
                 std::function<void()> ExecFunc;
                 while(ThreadPool != nullptr && !ThreadPool->IsShutdown)
                 {
-                    std::unique_lock<std::mutex> Lock(ThreadPool->ConditionalVariableMtx);
-                    if (ThreadPool->WorkQueue.Empty())
                     {
-                        std::cout << "Thread " << ThreadId << " is waiting" << std::endl;
-                        ThreadPool->ConditionLock.wait(Lock);
+                        std::unique_lock<std::mutex> Lock(ThreadPool->ConditionalVariableMtx);
+                        if (ThreadPool->WorkQueue.Empty())
+                        {
+                            std::cout << "Thread " << ThreadId << " is WAITING" << std::endl;
+                            ThreadPool->ConditionLock.wait(Lock);
+                        }
                     }
-
                     std::cout << "Thread " << ThreadId << " is RUNNING" << std::endl;
                     
                     if (ThreadPool->WorkQueue.Dequeue(ExecFunc))
