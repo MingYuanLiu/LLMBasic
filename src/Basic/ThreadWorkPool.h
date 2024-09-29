@@ -1,13 +1,34 @@
 ﻿#pragma once
 #include <functional>
 #include <future>
+#include <iostream>
 #include <mutex>
 #include <queue>
 #include <vcruntime.h>
 #include <thread>
 
+#include "HttpRequest.h"
+
 namespace LLMBasic
 {
+
+    template<typename T>
+    struct FunctionTraits;
+
+    template<typename C, typename RetType, typename ...ParamTypes>
+    struct FunctionTraits<RetType(__cdecl C::*)(ParamTypes...) const>
+    {
+        typedef RetType ReturnType;
+        typedef std::tuple<ParamTypes...> ArgTupleType;
+    };
+    
+    template<typename RetType, typename ...ParamTypes>
+    struct FunctionTraits<RetType(*)(ParamTypes...)>
+    {
+        typedef RetType ReturnType;
+        typedef std::tuple<ParamTypes...> ArgTupleType;
+    };
+    
     template<typename T>
     class SafeQueue
     {
@@ -74,8 +95,11 @@ namespace LLMBasic
                     std::unique_lock<std::mutex> Lock(ThreadPool->ConditionalVariableMtx);
                     if (ThreadPool->WorkQueue.Empty())
                     {
+                        std::cout << "Thread " << ThreadId << " is waiting" << std::endl;
                         ThreadPool->ConditionLock.wait(Lock);
                     }
+
+                    std::cout << "Thread " << ThreadId << " is RUNNING" << std::endl;
                     
                     if (ThreadPool->WorkQueue.Dequeue(ExecFunc))
                         ExecFunc();
@@ -126,17 +150,20 @@ namespace LLMBasic
             }
         }
 
-        template<typename T>
-        auto AddLambdaWork(T&& t) -> std::future<decltype(t())>
+        template<typename LambdaType>
+        auto AddLambdaWork(LambdaType&& Lambda) -> std::future<typename FunctionTraits<decltype(&LambdaType::operator())>::ReturnType>
         {
-            std::function<decltype(t)()> Func(t);
-            auto TaskPtr = std::make_shared<std::packaged_task<decltype(t)()>>(Func);
+            typedef typename FunctionTraits<decltype(&LambdaType::operator())>::ReturnType LambdaRetType;
+            
+            std::function<LambdaRetType()> Func = std::bind(std::forward<LambdaType>(Lambda));
+            auto TaskPtr = std::make_shared<std::packaged_task<LambdaRetType()>>(Func);
             std::function<void()> WrapperFunc = [TaskPtr](){ (*TaskPtr)(); };
 
             WorkQueue.Enqueue(WrapperFunc);
 
             ConditionLock.notify_one();
-            return TaskPtr->get_future(); 
+            
+             return TaskPtr->get_future(); 
         }
 
         template<typename F, typename... Args>

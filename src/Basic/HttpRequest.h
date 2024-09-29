@@ -37,11 +37,11 @@ namespace LLMBasic
 
         json11::Json AwaitSendRequest(const json11::Json& RequestData);
 
-        void AddResponseCallback(ResponseCallback&& Callback);
+        void AddResponseCallback(ResponseCallback&& Callback) { Callbacks.push_back(std::forward<ResponseCallback>(Callback)); }
 
         void SetResponseWithHeaderData(bool WithHeader) { IsResponseWithHeaderData = WithHeader;  }
         
-    private:
+
         explicit HttpRequest(const std::string& Url)
             : Headers(std::vector<std::string>()),
             ResponseData(json11::Json()),
@@ -49,19 +49,15 @@ namespace LLMBasic
             IsResponseWithHeaderData(false),
             Callbacks(std::vector<ResponseCallback>())
         {}
-
-        struct CurlSendData
-        {
-            const char* DataPtr;
-            size_t DataSizeSendLeft;
-        };
+    private:
         
         HttpResponseCode CurlPostRequest(const json11::Json& RequestData);
 
+        /*
         size_t CurlRequestWriteCallback(void* RecvData, size_t DataSize, size_t nMem, void* UserData);
 
         // read callback of sending data
-        size_t CurlRequestSendDataReadCallback(void* SendData, size_t DataSize, size_t nMem, void* UserData);
+        size_t CurlRequestSendDataReadCallback(void* SendData, size_t DataSize, size_t nMem, void* UserData);*/
 
         HttpResponseCode ConvertCurlCodeToHttpErrorCode(const CURLcode& CurlCode);
         

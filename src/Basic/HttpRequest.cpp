@@ -6,6 +6,53 @@
 
 namespace LLMBasic
 {
+    struct CurlSendData
+    {
+        const char* DataPtr;
+        size_t DataSizeSendLeft;
+    };
+    
+    size_t CurlRequestWriteCallback(void* RecvData, size_t DataSize, size_t nMem, void* UserData)
+    {
+        if (UserData == nullptr || RecvData == nullptr || DataSize == 0)
+            return 0;
+
+        size_t BufferSize = DataSize * nMem;
+        std::string *Buffer = (std::string*)UserData;
+        if (Buffer != nullptr)
+        {
+            Buffer->append(static_cast<const char*>(RecvData), BufferSize);
+        }
+        
+        return BufferSize;
+    }
+
+    static size_t CurlRequestSendDataReadCallback(void* SendData, size_t DataSize, size_t nMem, void* UserData)
+    {
+        if (UserData == nullptr || SendData == nullptr || DataSize == 0)
+            return 0;
+        
+        CurlSendData* DataPtr = static_cast<CurlSendData*>(UserData);
+        size_t BufferSize = DataSize * nMem;
+
+        if (DataPtr->DataSizeSendLeft)
+        {
+            size_t ThisTimeCopySize = DataPtr->DataSizeSendLeft;
+            if (ThisTimeCopySize > BufferSize)
+            {
+                ThisTimeCopySize = BufferSize;
+            }
+
+            memcpy(SendData, DataPtr->DataPtr, ThisTimeCopySize);
+            DataPtr->DataPtr += ThisTimeCopySize;
+            DataPtr->DataSizeSendLeft -= ThisTimeCopySize;
+
+            return ThisTimeCopySize;
+        }
+
+        return 0;
+    }
+    
     std::shared_ptr<HttpRequest> HttpRequest::Create(const std::string& Url)
     {
         return std::make_shared<HttpRequest>(Url);
@@ -15,14 +62,13 @@ namespace LLMBasic
     {
         Callbacks.push_back(Callback);
         
-        ThreadWorkPool::Get().AddLambdaWork([this, RequestData]() -> HttpResponseCode
+        ThreadWorkPool::Get().AddLambdaWork([this, RequestData]()
         {
             auto Code = CurlPostRequest(RequestData);
             for (const auto& Callback : Callbacks)
             {
                 Callback(Code, ResponseData);
             }
-            return Code;
         });
     }
 
@@ -67,21 +113,19 @@ namespace LLMBasic
         
         // setup send data read callback
         CurlSendData CurlData;
-        {
-            std::string RequestStrData = RequestData.dump();
-            CurlData.DataPtr = RequestStrData.c_str();
-            CurlData.DataSizeSendLeft = RequestStrData.size();
+        std::string RequestStrData = RequestData.dump();
+        CurlData.DataPtr = RequestStrData.c_str();
+        CurlData.DataSizeSendLeft = RequestStrData.size();
+        std::cout << "request data: " << RequestStrData << std::endl;
 
-            curl_easy_setopt(CurlHandle, CURLOPT_READFUNCTION, &CurlRequestSendDataReadCallback);
-            curl_easy_setopt(CurlHandle, CURLOPT_READDATA, &CurlData);
-        }
+        curl_easy_setopt(CurlHandle, CURLOPT_READFUNCTION, CurlRequestSendDataReadCallback);
+        curl_easy_setopt(CurlHandle, CURLOPT_READDATA, static_cast<void*>(&CurlData));
         
         // setup response callback
-        {
-            std::string RespData;
-            curl_easy_setopt(CurlHandle, CURLOPT_WRITEFUNCTION, &CurlRequestWriteCallback);
-            curl_easy_setopt(CurlHandle, CURLOPT_WRITEDATA, static_cast<void*>(&RespData));
-        }
+        std::string RespData;
+        curl_easy_setopt(CurlHandle, CURLOPT_WRITEFUNCTION, CurlRequestWriteCallback);
+        curl_easy_setopt(CurlHandle, CURLOPT_WRITEDATA, static_cast<void*>(&RespData));
+        
         
         if (IsResponseWithHeaderData)
         {
@@ -102,6 +146,13 @@ namespace LLMBasic
         }
         
         CURLcode RespCode = curl_easy_perform(CurlHandle);
+        std::string ParseError;
+        ResponseData = json11::Json::parse(RespData, ParseError);
+        if (!ParseError.empty())
+        {
+            std::cout << "parse response data failed: " << ParseError << std::endl;
+        }
+        
         if (RespCode != CURLE_OK)
         {
             ErrorMsg = curl_easy_strerror(RespCode);
@@ -117,34 +168,6 @@ namespace LLMBasic
         curl_easy_cleanup(CurlHandle);
             
         return RetCode;
-    }
-
-    size_t HttpRequest::CurlRequestWriteCallback(void* RecvData, size_t DataSize, size_t nMem, void* UserData)
-    {
-        
-    }
-
-    size_t HttpRequest::CurlRequestSendDataReadCallback(void* SendData, size_t DataSize, size_t nMem, void* UserData)
-    {
-        CurlSendData* DataPtr = static_cast<CurlSendData*>(UserData);
-        size_t BufferSize = DataSize * nMem;
-
-        if (DataPtr->DataSizeSendLeft)
-        {
-            size_t ThisTimeCopySize = DataPtr->DataSizeSendLeft;
-            if (ThisTimeCopySize > BufferSize)
-            {
-                ThisTimeCopySize = BufferSize;
-            }
-
-            memcpy(SendData, DataPtr->DataPtr, ThisTimeCopySize);
-            DataPtr->DataPtr += ThisTimeCopySize;
-            DataPtr->DataSizeSendLeft -= ThisTimeCopySize;
-
-            return ThisTimeCopySize;
-        }
-
-        return 0;
     }
 
     HttpResponseCode HttpRequest::ConvertCurlCodeToHttpErrorCode(const CURLcode& CurlCode)

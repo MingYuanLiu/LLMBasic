@@ -21,7 +21,7 @@ namespace LLMBasic
     class ClaudeClient
     {
     public:
-        static constexpr std::string API_MESSAGE = "/v1/message";
+        static const std::string API_MESSAGE;
         
         using ResponseCallback = std::function<bool(std::string& /* response string data */)>;
         
