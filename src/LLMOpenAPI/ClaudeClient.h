@@ -48,7 +48,7 @@ namespace LLMBasic
 
          std::vector<std::string> SendMessages(const std::vector<std::string>& Message);
 
-        std::vector<std::string> SendPictureAndMessages(const std::string& ImagePath, const std::vector<std::string>& Messages);
+        std::vector<std::string> SendPictureAndMessages(const std::vector<std::string>& ImagePaths, const std::vector<std::string>& Messages);
 
         const std::vector<std::string>& GetLLMResponse() { return LLMResponse; }
 
@@ -60,7 +60,13 @@ namespace LLMBasic
     private:
         void AppendToChatContext(const std::string& Role, const std::string& Message);
 
-        void SendMessagesInternal(const json11::Json&Message);
+        void AppendToChatContext(const json11::Json& JsonMessage);
+
+        void SendMessagesInternal(const json11::Json& Message);
+
+        std::string GetImageFileType(const std::string& ImagePath);
+
+        bool CompareStringWithIgnoreCase(const std::string& str1, const std::string& str2);
         
         ClientInitOptions InitOptions;
         std::vector<std::string> LLMResponse;

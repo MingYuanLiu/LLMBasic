@@ -51,7 +51,7 @@ namespace LLMBasic
 
         void SetResponseWithHeaderData(bool WithHeader) { IsResponseWithHeaderData = WithHeader;  }
 
-    private:
+
         explicit HttpRequest(const std::string& Url)
             : Headers(std::vector<std::string>()),
             ResponseData(json11::Json()),
@@ -60,6 +60,7 @@ namespace LLMBasic
             Callbacks(std::vector<ResponseCallback>())
         {}
         
+    private:
         HttpResponseCode CurlPostRequest(const json11::Json& RequestData);
 
         HttpResponseCode ConvertCurlCodeToHttpErrorCode(const CURLcode& CurlCode);

@@ -2,6 +2,7 @@
 #include <curl/curl.h>
 #include "Basic/HttpRequest.h"
 #include "Basic/ThreadWorkPool.h"
+#include "LLMOpenAPI/ClaudeClient.h"
 
 int main() {
     /**
@@ -43,65 +44,21 @@ int main() {
     
     json11::Json Data = Request->AwaitSendRequest(SendData);
     std::cout << Data.dump() << std::endl;*/
-
-    // test thread pool
     LLMBasic::ThreadWorkPool::Get().Init(4);
-
-    LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
-    {
-        std::cout << "hello world 1 \n" << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    });
-
-    LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
-    {
-        std::cout << "hello world 2 \n" << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    });
     
-    LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
-    {
-        std::cout << "hello world 3 \n" << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    });
+    LLMBasic::ClientInitOptions Opt;
+    Opt.ApiKey = "sk-H2p1b94d796bf78fe015e24fca6fa99857e527e0187qtmvi";
+    Opt.BaseUrl = "https://api.gptsapi.net";
+    Opt.SystemPrompt = "You are a house seller";
+    Opt.ModelType = LLMBasic::Claude_3_5_Sonnect;
+    Opt.MaxTokens = 4096;
 
-    LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
-    {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "hello world 4 \n" << std::endl;
-    });
-    
-    LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "hello world 5 \n" << std::endl;
-    });
-    
-    LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "hello world 6 \n" << std::endl;
-    });
-    
-    LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
-    {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "hello world 7 \n" << std::endl;
-    });
-    
-    LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
-    {
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "hello world 8 \n" << std::endl;
-    });
+    std::string ImagePath = "H:\\Workspace\\AI_UI\\LLMBasic\\build\\Debug\\images.jpg";
+    LLMBasic::ClaudeClient Client(Opt);
+    auto Resp = Client.SendPictureAndMessages({ImagePath}, {"Convert the UI in the image into UMG code"});
 
-    LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "hello world 9 \n" << std::endl;
-    });
-
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    if (Resp.size() > 0)
+        std::cout << Resp[0] << std::endl;
 
     LLMBasic::ThreadWorkPool::Get().Shutdown();
     return 0;

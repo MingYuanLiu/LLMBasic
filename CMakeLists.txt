@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(LLMBasic)
 
+set(CMAKE_CXX_STANDARD 17)
+
 # setup libcurl
 set(LibCurlHome "${CMAKE_CURRENT_SOURCE_DIR}/libcurl")
 set(CurlIncludeDir "${LibCurlHome}/include/")

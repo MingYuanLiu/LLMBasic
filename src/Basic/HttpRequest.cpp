@@ -75,6 +75,9 @@ namespace LLMBasic
         });
 
         ResponseCode = Result.get();
+
+        std::cout << "Response data:" << ResponseData.dump() << std::endl;
+        
         return ResponseData;
     }
 

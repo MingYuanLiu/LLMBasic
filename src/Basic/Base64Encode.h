@@ -1,18 +1,19 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace LLMBasic
 {
     class Base64Encoder
     {
     public:
-        std::string Encode(const std::string& Input);
+        static std::string Encode(const std::vector<char>& Input);
 
-        std::string Decode(const std::string& Input);
+        static std::string Decode(const std::vector<char>& Input);
 
     private:
-        bool IsBase64(const char code);
+        static bool IsBase64(const char code);
         
         static std::string Base64EncodeTable;
     };

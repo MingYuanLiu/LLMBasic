@@ -15,14 +15,14 @@ namespace LLMBasic
         return (isalnum(code) || (code == '+') || (code == '/'));
     }
  
-    std::string Base64Encoder::Encode(const std::string& Input)
+    std::string Base64Encoder::Encode(const std::vector<char>& Input)
     {
         std::string Result;
         size_t InputLen = Input.size();
         int i = 0;
         int j = 0;
-        unsigned char ArrayWithLengthThree[3];
-        unsigned char ArrayWithLengthFour[4];
+        uint8_t ArrayWithLengthThree[3];
+        uint8_t ArrayWithLengthFour[4];
  
         while (InputLen--)
         {
@@ -30,10 +30,10 @@ namespace LLMBasic
             if(i == 3)
             {
                 ArrayWithLengthFour[0] = (ArrayWithLengthThree[0] & 0xfc) >> 2;
-                ArrayWithLengthFour[1] = ((ArrayWithLengthThree[0] & 0x03) << 4) + ((ArrayWithLengthThree[1] & 0xf0) >> 4);
-                ArrayWithLengthFour[2] = ((ArrayWithLengthThree[1] & 0x0f) << 2) + ((ArrayWithLengthThree[2] & 0xc0) >> 6);
+                ArrayWithLengthFour[1] = static_cast<uint8_t>((ArrayWithLengthThree[0] & 0x03) << 4) + static_cast<uint8_t>((ArrayWithLengthThree[1] & 0xf0) >> 4);
+                ArrayWithLengthFour[2] = static_cast<uint8_t>((ArrayWithLengthThree[1] & 0x0f) << 2) + static_cast<uint8_t>((ArrayWithLengthThree[2] & 0xc0) >> 6);
                 ArrayWithLengthFour[3] = ArrayWithLengthThree[2] & 0x3f;
-                for(i = 0; (i <4) ; i++)
+                for(i = 0; i <4 ; i++)
                 {
                     Result += Base64EncodeTable[ArrayWithLengthFour[i]];
                 }
@@ -41,6 +41,7 @@ namespace LLMBasic
                 i = 0;
             }
         }
+        
         if(i)
         {
             for(j = i; j < 3; j++)
@@ -48,63 +49,67 @@ namespace LLMBasic
                 ArrayWithLengthThree[j] = '\0';
             }
  
-        ArrayWithLengthFour[0] = (ArrayWithLengthThree[0] & 0xfc) >> 2;
-        ArrayWithLengthFour[1] = ((ArrayWithLengthThree[0] & 0x03) << 4) + ((ArrayWithLengthThree[1] & 0xf0) >> 4);
-        ArrayWithLengthFour[2] = ((ArrayWithLengthThree[1] & 0x0f) << 2) + ((ArrayWithLengthThree[2] & 0xc0) >> 6);
-        ArrayWithLengthFour[3] = ArrayWithLengthThree[2] & 0x3f;
+            ArrayWithLengthFour[0] = (ArrayWithLengthThree[0] & 0xfc) >> 2;
+            ArrayWithLengthFour[1] = static_cast<uint8_t>((ArrayWithLengthThree[0] & 0x03) << 4) + ((ArrayWithLengthThree[1] & 0xf0) >> 4);
+            ArrayWithLengthFour[2] = static_cast<uint8_t>((ArrayWithLengthThree[1] & 0x0f) << 2) + ((ArrayWithLengthThree[2] & 0xc0) >> 6);
+            ArrayWithLengthFour[3] = ArrayWithLengthThree[2] & 0x3f;
  
-        for(j = 0; j < i + 1; j++)
-        {
-            Result += Base64EncodeTable[ArrayWithLengthFour[j]];
-        }
+            for(j = 0; j < i + 1; j++)
+            {
+                Result += Base64EncodeTable[ArrayWithLengthFour[j]];
+            }
  
-        while(i++ < 3)
-        {
-            Result += '=';
+            while(i++ < 3)
+            {
+                Result += '=';
+            }
         }
- 
-        }
+        
         return Result;
     }
-    
-std::string Base64Encoder::Decode(const std::string& Input)
-{
-    int in_len = (int) encoded_string.size();
-    int i = 0;
-    int j = 0;
-    int in_ = 0;
-    unsigned char char_array_4[4], char_array_3[3];
-    std::string ret;
- 
-    while (in_len-- && ( encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
-        char_array_4[i++] = encoded_string[in_]; in_++;
-        if (i ==4) {
-            for (i = 0; i <4; i++)
-                char_array_4[i] = base64_chars.find(char_array_4[i]);
- 
-            char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
- 
-            for (i = 0; (i < 3); i++)
-                ret += char_array_3[i];
-            i = 0;
+        
+    std::string Base64Encoder::Decode(const std::vector<char>& Input)
+    {
+        int InputLen = static_cast<int>(Input.size());
+        int i = 0;
+        int j = 0;
+        int Index = 0;
+        uint8_t ArrayWithLengthFour[4], ArrayWithLengthThree[3];
+        std::string DecodeRes;
+     
+        while (InputLen-- &&  Input[Index] != '=' && IsBase64(Input[Index]))
+        {
+            ArrayWithLengthFour[i++] = Input[Index++];
+            if (i ==4)
+            {
+                for (i = 0; i <4; i++)
+                    ArrayWithLengthFour[i] = Base64EncodeTable[static_cast<char>(ArrayWithLengthFour[i])];
+     
+                ArrayWithLengthThree[0] = static_cast<uint8_t>(ArrayWithLengthFour[0] << 2) + ((ArrayWithLengthFour[1] & 0x30) >> 4);
+                ArrayWithLengthThree[1] = static_cast<uint8_t>((ArrayWithLengthFour[1] & 0xf) << 4) + ((ArrayWithLengthFour[2] & 0x3c) >> 2);
+                ArrayWithLengthThree[2] = static_cast<uint8_t>((ArrayWithLengthFour[2] & 0x3) << 6) + ArrayWithLengthFour[3];
+     
+                for (i = 0; i < 3; i++)
+                    DecodeRes += static_cast<char>(ArrayWithLengthThree[i]);
+                
+                i = 0;
+            }
         }
+        if (i)
+        {
+            for (j = i; j <4; j++)
+                ArrayWithLengthFour[j] = 0;
+     
+            for (j = 0; j <4; j++)
+                ArrayWithLengthFour[j] = Base64EncodeTable[static_cast<char>(ArrayWithLengthFour[j])];
+     
+            ArrayWithLengthThree[0] = static_cast<uint8_t>(ArrayWithLengthFour[0] << 2) + ((ArrayWithLengthFour[1] & 0x30) >> 4);
+            ArrayWithLengthThree[1] = static_cast<uint8_t>((ArrayWithLengthFour[1] & 0xf) << 4) + ((ArrayWithLengthFour[2] & 0x3c) >> 2);
+            ArrayWithLengthThree[2] = static_cast<uint8_t>((ArrayWithLengthFour[2] & 0x3) << 6) + ArrayWithLengthFour[3];
+     
+            for (j = 0; (j < i - 1); j++) DecodeRes += static_cast<char>(ArrayWithLengthThree[j]);
+        }
+     
+        return DecodeRes;
     }
-    if (i) {
-        for (j = i; j <4; j++)
-            char_array_4[j] = 0;
- 
-        for (j = 0; j <4; j++)
-            char_array_4[j] = base64_chars.find(char_array_4[j]);
- 
-        char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-        char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-        char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
- 
-        for (j = 0; (j < i - 1); j++) ret += char_array_3[j];
-    }
- 
-    return ret;
-}
 }
