@@ -47,60 +47,58 @@ int main() {
     // test thread pool
     LLMBasic::ThreadWorkPool::Get().Init(4);
 
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-    
     LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
     {
-        std::cout << "hello world 1" << std::endl;
+        std::cout << "hello world 1 \n" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
     });
 
     LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
     {
-        std::cout << "hello world 2" << std::endl;
+        std::cout << "hello world 2 \n" << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
     });
     
     LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
     {
-        std::cout << "hello world 3" << std::endl;
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << "hello world 3 \n" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     });
 
     LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
     {
             std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "hello world 4" << std::endl;
+        std::cout << "hello world 4 \n" << std::endl;
     });
     
     LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
     {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "hello world 5" << std::endl;
+        std::cout << "hello world 5 \n" << std::endl;
     });
     
     LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
     {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "hello world 6" << std::endl;
+        std::cout << "hello world 6 \n" << std::endl;
     });
     
     LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
     {
             std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "hello world 7" << std::endl;
+        std::cout << "hello world 7 \n" << std::endl;
     });
     
     LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
     {
             std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "hello world 8" << std::endl;
+        std::cout << "hello world 8 \n" << std::endl;
     });
 
     LLMBasic::ThreadWorkPool::Get().AddLambdaWork([]()
     {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << "hello world 9" << std::endl;
+        std::cout << "hello world 9 \n" << std::endl;
     });
 
     std::this_thread::sleep_for(std::chrono::seconds(10));

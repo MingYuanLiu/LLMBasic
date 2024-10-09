@@ -52,13 +52,8 @@ namespace LLMBasic
 
         return 0;
     }
-    
-    std::shared_ptr<HttpRequest> HttpRequest::Create(const std::string& Url)
-    {
-        return std::make_shared<HttpRequest>(Url);
-    }
-    
-    void HttpRequest::SendRequest(const json11::Json& RequestData, HttpRequest::ResponseCallback&& Callback)
+
+    void HttpRequest::PostRequest(const json11::Json& RequestData, HttpRequest::ResponseCallback&& Callback)
     {
         Callbacks.push_back(Callback);
         
@@ -72,14 +67,14 @@ namespace LLMBasic
         });
     }
 
-    json11::Json HttpRequest::AwaitSendRequest(const json11::Json& RequestData)
+    json11::Json HttpRequest::AwaitPostRequest(const json11::Json& RequestData)
     {
         std::future<HttpResponseCode> Result = ThreadWorkPool::Get().AddLambdaWork([this, RequestData]() -> HttpResponseCode
         {
             return CurlPostRequest(RequestData);
         });
 
-        auto RespCode = Result.get();
+        ResponseCode = Result.get();
         return ResponseData;
     }
 
